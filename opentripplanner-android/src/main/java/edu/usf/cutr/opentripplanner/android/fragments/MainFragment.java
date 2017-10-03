@@ -49,7 +49,9 @@ import org.opentripplanner.routing.core.OptimizeType;
 import org.opentripplanner.routing.core.TraverseMode;
 import org.opentripplanner.routing.core.TraverseModeSet;
 
+import android.Manifest;
 import android.animation.LayoutTransition;
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlarmManager;
@@ -82,10 +84,12 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.provider.ContactsContract;
 import android.provider.Settings;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.DrawerLayout.DrawerListener;
 import android.text.Editable;
@@ -365,7 +369,7 @@ public class MainFragment extends Fragment implements
     @SuppressWarnings("deprecation")
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     private static void removeOnGlobalLayoutListener(View v,
-            OnGlobalLayoutListener listener) {
+                                                     OnGlobalLayoutListener listener) {
         ViewTreeObserver viewTreeObserver = v.getViewTreeObserver();
         if (viewTreeObserver != null) {
             if (Build.VERSION.SDK_INT < 16) {
@@ -424,7 +428,7 @@ public class MainFragment extends Fragment implements
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
-            Bundle savedInstanceState) {
+                             Bundle savedInstanceState) {
 
         final View mainView = inflater.inflate(R.layout.main, container, false);
 
@@ -550,7 +554,7 @@ public class MainFragment extends Fragment implements
         mAlarmIntentBikeRentalUpdate = PendingIntent.getBroadcast(mApplicationContext, 0, mBikeRentalUpdateIntent, 0);
         mTripTimeUpdateIntent = new Intent(OTPApp.INTENT_UPDATE_TRIP_TIME_ACTION);
         mAlarmIntentTripTimeUpdate = PendingIntent.getBroadcast(mApplicationContext, 0, mTripTimeUpdateIntent, 0);
-        mAlarmMgr = (AlarmManager)mApplicationContext.getSystemService(Context.ALARM_SERVICE);
+        mAlarmMgr = (AlarmManager) mApplicationContext.getSystemService(Context.ALARM_SERVICE);
         mIsAlarmBikeRentalUpdateActive = false;
         mIsAlarmTripTimeUpdateActive = false;
         mAlarmReceiver = new AlarmReceiver();
@@ -617,9 +621,13 @@ public class MainFragment extends Fragment implements
     }
 
 
+    @SuppressLint("MissingPermission")
     private void initializeMapInterface(GoogleMap mMap) {
         UiSettings uiSettings = mMap.getUiSettings();
-        mMap.setMyLocationEnabled(true);
+        int permissionCheck = ContextCompat.checkSelfPermission(getActivity().getApplicationContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION);
+        if (permissionCheck == 1)
+            mMap.setMyLocationEnabled(true);
         mMap.setOnCameraChangeListener(this);
         uiSettings.setMyLocationButtonEnabled(false);
         uiSettings.setCompassEnabled(true);
@@ -791,7 +799,7 @@ public class MainFragment extends Fragment implements
 
             @Override
             public void onInfoWindowClick(Marker marker) {
-                if (mBikeRentalStations != null && mBikeRentalStations.containsKey(marker)){
+                if (mBikeRentalStations != null && mBikeRentalStations.containsKey(marker)) {
                     BikeRentalStationInfo bikeRentalStationInfo = mBikeRentalStations.get(marker);
                     setMarker(true, bikeRentalStationInfo.getLocation(), false, false);
                     setTextBoxLocation(bikeRentalStationInfo.getName(), true);
@@ -812,7 +820,6 @@ public class MainFragment extends Fragment implements
             }
         };
         mMap.setOnInfoWindowClickListener(onInfoWindowClickListener);
-
 
 
         DrawerListener dl = new DrawerListener() {
@@ -847,7 +854,7 @@ public class MainFragment extends Fragment implements
                 boolean sameTraverseMode = previousModes.getModes().equals(newModes.getModes());
                 boolean sameBikeTriangle = previousBikeTriangleMinValue == mBikeTriangleMinValue
                         && previousBikeTriangleMaxValue == mBikeTriangleMaxValue;
-                if (!sameOptimization || !sameTraverseMode || !sameBikeTriangle){
+                if (!sameOptimization || !sameTraverseMode || !sameBikeTriangle) {
                     processRequestTrip();
                 }
             }
@@ -865,7 +872,7 @@ public class MainFragment extends Fragment implements
         mTbStartLocation.setAdapter(startLocationPlacesAutoCompleteAdapter);
 
         mTbEndLocation.setAdapter(endLocationPlacesAutoCompleteAdapter);
-        mTbEndLocation .setThreshold(3);
+        mTbEndLocation.setThreshold(3);
 
         OnTouchListener otlStart = new RightDrawableOnTouchListener(mTbStartLocation) {
             @Override
@@ -1038,7 +1045,7 @@ public class MainFragment extends Fragment implements
 
             @Override
             public void afterTextChanged(Editable s) {
-                if (!changingTextBoxWithAutocomplete){
+                if (!changingTextBoxWithAutocomplete) {
                     if (mIsStartLocationChangedByUser) {
                         SharedPreferences.Editor prefsEditor = mPrefs.edit();
                         prefsEditor.putBoolean(OTPApp.PREFERENCE_KEY_ORIGIN_IS_MY_LOCATION, false);
@@ -1083,7 +1090,7 @@ public class MainFragment extends Fragment implements
         OnEditorActionListener tbLocationOnEditorActionListener = new OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId,
-                    KeyEvent event) {
+                                          KeyEvent event) {
                 if (v.getId() == R.id.tbStartLocation) {
                     if (actionId == EditorInfo.IME_ACTION_NEXT
                             || (event != null
@@ -1154,7 +1161,7 @@ public class MainFragment extends Fragment implements
                                     .getString(R.string.toast_tripplanner_current_location_error),
                             Toast.LENGTH_LONG).show();
                 } else {
-                    if (!mMapFailed){
+                    if (!mMapFailed) {
                         if (mMap.getCameraPosition().zoom < OTPApp.defaultMyLocationZoomLevel) {
                             mMap.animateCamera(CameraUpdateFactory
                                     .newLatLngZoom(mCurrentLatLng, OTPApp.defaultMyLocationZoomLevel));
@@ -1204,7 +1211,7 @@ public class MainFragment extends Fragment implements
         OnClickListener oclSwapOriginDestination = new OnClickListener() {
             @Override
             public void onClick(View arg0) {
-                if (!mMapFailed){
+                if (!mMapFailed) {
                     boolean tempBoolean;
                     CustomAddress tempAddress;
                     tempBoolean = mIsStartLocationGeocodingCompleted;
@@ -1236,11 +1243,10 @@ public class MainFragment extends Fragment implements
                     if (mStartMarker != null) {
                         mStartMarker.remove();
                     }
-                    if (mEndMarker != null){
+                    if (mEndMarker != null) {
                         mStartMarker = mMap.addMarker(newStartMarkerOptions);
                         mStartMarkerPosition = mStartMarker.getPosition();
-                    }
-                    else{
+                    } else {
                         mStartMarker = null;
                         mStartMarkerPosition = null;
                     }
@@ -1254,11 +1260,10 @@ public class MainFragment extends Fragment implements
                     if (mEndMarker != null) {
                         mEndMarker.remove();
                     }
-                    if (mOldStartMarker != null){
+                    if (mOldStartMarker != null) {
                         mEndMarker = mMap.addMarker(newEndMarkerOptions);
                         mEndMarkerPosition = mEndMarker.getPosition();
-                    }
-                    else{
+                    } else {
                         mEndMarker = null;
                         mEndMarkerPosition = null;
                     }
@@ -1286,7 +1291,7 @@ public class MainFragment extends Fragment implements
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
 
-                if (mFragmentListener.getCurrentItinerary() != null){
+                if (mFragmentListener.getCurrentItinerary() != null) {
                     if (mFragmentListener.getCurrentItineraryIndex() != position) {
                         mFragmentListener.onItinerarySelected(position, 2);
                     }
@@ -1307,13 +1312,13 @@ public class MainFragment extends Fragment implements
                 .setOnRangeSeekBarChangeListener(new OnRangeSeekBarChangeListener<Double>() {
                     @Override
                     public void onRangeSeekBarValuesChanged(RangeSeekBar<?> rangeSeekBar,
-                            Double minValue, Double maxValue) {
+                                                            Double minValue, Double maxValue) {
                         // handle changed range values
                         Log.i(OTPApp.TAG,
                                 "User selected new range values: MIN=" + minValue + ", MAX="
                                         + maxValue);
                     }
-             });
+                });
 
 
         mBtnModeWalk.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -1340,12 +1345,12 @@ public class MainFragment extends Fragment implements
                 showBikeParameters(isChecked);
                 mBtnModeBike.setEnabled(!isChecked);
                 updateModes(getSelectedTraverseModeSet());
-                if (mOTPApp.getSelectedServer().getOffersBikeRental() && isChecked){
+                if (mOTPApp.getSelectedServer().getOffersBikeRental() && isChecked) {
                     BikeRentalLoad bikeRentalGetStations = new BikeRentalLoad(mApplicationContext, true,
                             MainFragment.this);
                     bikeRentalGetStations.execute(mOTPApp.getSelectedServer().getBaseURL());
                 }
-                if (mBikeRentalStations != null && !isChecked){
+                if (mBikeRentalStations != null && !isChecked) {
                     removeBikeStations();
                 }
             }
@@ -1374,7 +1379,7 @@ public class MainFragment extends Fragment implements
 
         mDdlOptimization.setOnItemClickListener(new OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View view,
-                    int position, long id) {
+                                    int position, long id) {
                 if (getSelectedTraverseModeSet().getBicycle()) {
                     mOptimizationValueToRestoreWhenNoBike = position;
                 }
@@ -1401,7 +1406,7 @@ public class MainFragment extends Fragment implements
      * bike parameters) to last state, before closing the app, if there isn't data functions set
      * options to default value. If it's needed UI update is also processed.
      */
-    private void restorePanelUI(){
+    private void restorePanelUI() {
         restoreTraverseModes();
         restoreBikeParameters();
         restoreOptimization();
@@ -1411,13 +1416,12 @@ public class MainFragment extends Fragment implements
      * Recovers trip optimization value to last state, before closing the app, if there isn't data
      * sets default value.
      */
-    private void restoreOptimization(){
+    private void restoreOptimization() {
         int previousOptimization;
         if ((previousOptimization =
-                mPrefs.getInt(mOTPApp.PREFERENCE_KEY_LAST_OPTIMIZATION, -1)) != -1){
+                mPrefs.getInt(mOTPApp.PREFERENCE_KEY_LAST_OPTIMIZATION, -1)) != -1) {
             mDdlOptimization.setItemChecked(previousOptimization, true);
-        }
-        else{
+        } else {
             SharedPreferences.Editor editor = mPrefs.edit();
             editor.putInt(OTPApp.PREFERENCE_KEY_LAST_OPTIMIZATION, 0);
             editor.commit();
@@ -1429,18 +1433,16 @@ public class MainFragment extends Fragment implements
      * Recovers bike parameters to last state, before closing the app, if there isn't data sets
      * default value.
      */
-    private void restoreBikeParameters(){
+    private void restoreBikeParameters() {
         double previousMinValue, previousMaxValue;
-        if ((previousMinValue = mPrefs.getFloat(OTPApp.PREFERENCE_KEY_LAST_BIKE_TRIANGLE_MIN_VALUE, -1)) != -1){
+        if ((previousMinValue = mPrefs.getFloat(OTPApp.PREFERENCE_KEY_LAST_BIKE_TRIANGLE_MIN_VALUE, -1)) != -1) {
             mBikeTriangleParameters.setSelectedMinValue(previousMinValue);
-        }
-        else {
+        } else {
             mBikeTriangleParameters.setSelectedMinValue(OTPApp.BIKE_PARAMETERS_QUICK_DEFAULT_VALUE);
         }
-        if ((previousMaxValue = mPrefs.getFloat(OTPApp.PREFERENCE_KEY_LAST_BIKE_TRIANGLE_MAX_VALUE, -1)) != -1){
+        if ((previousMaxValue = mPrefs.getFloat(OTPApp.PREFERENCE_KEY_LAST_BIKE_TRIANGLE_MAX_VALUE, -1)) != -1) {
             mBikeTriangleParameters.setSelectedMaxValue(previousMaxValue);
-        }
-        else{
+        } else {
             mBikeTriangleParameters.setSelectedMaxValue(OTPApp.BIKE_PARAMETERS_FLAT_DEFAULT_VALUE);
         }
 
@@ -1450,18 +1452,17 @@ public class MainFragment extends Fragment implements
      * Recovers trip traverse mode to last state, before closing the app, if there isn't data
      * sets default value. It also updates UI according to the new modes.
      */
-    private void restoreTraverseModes(){
+    private void restoreTraverseModes() {
         String lastTraverseModeSet;
         if ((lastTraverseModeSet =
-                mPrefs.getString(OTPApp.PREFERENCE_KEY_LAST_TRAVERSE_MODE_SET, "")).equals("")){
+                mPrefs.getString(OTPApp.PREFERENCE_KEY_LAST_TRAVERSE_MODE_SET, "")).equals("")) {
             mBtnModeWalk.setChecked(true);
             mBtnModeBus.setChecked(true);
             mBtnModeTrain.setChecked(true);
             mBtnModeFerry.setChecked(true);
             showBikeParameters(false);
             setBikeOptimizationAdapter(false, false);
-        }
-        else {
+        } else {
             TraverseModeSet traverseModeSet = new TraverseModeSet(lastTraverseModeSet);
             if (traverseModeSet != null) {
                 mBtnModeWalk.setChecked(traverseModeSet.getWalk());
@@ -1482,7 +1483,7 @@ public class MainFragment extends Fragment implements
                     setBikeOptimizationAdapter(false, false);
                     showBikeParameters(false);
                 }
-                if (traverseModeSet.getBicycle()){
+                if (traverseModeSet.getBicycle()) {
                     setBikeOptimizationAdapter(true, false);
                     showBikeParameters(mPrefs.getInt(OTPApp.PREFERENCE_KEY_LAST_OPTIMIZATION, -1) == 2);
                 }
@@ -1492,7 +1493,7 @@ public class MainFragment extends Fragment implements
         }
     }
 
-    private TraverseModeSet getSelectedTraverseModeSet(){
+    private TraverseModeSet getSelectedTraverseModeSet() {
         TraverseModeSet selectedTraverseModeSet = new TraverseModeSet();
         selectedTraverseModeSet.setWalk(mBtnModeWalk.isChecked()
                 || mBtnModeRentedBike.isChecked());
@@ -1505,7 +1506,7 @@ public class MainFragment extends Fragment implements
         return selectedTraverseModeSet;
     }
 
-    private void updateModes(TraverseModeSet modeSet){
+    private void updateModes(TraverseModeSet modeSet) {
         SharedPreferences.Editor editor = mPrefs.edit();
         String modesString = modeSet.toString();
         editor.putString(OTPApp.PREFERENCE_KEY_LAST_TRAVERSE_MODE_SET, modesString);
@@ -1517,7 +1518,7 @@ public class MainFragment extends Fragment implements
      * necessary.
      */
     public void processRequestTrip() {
-        if (mIsStartLocationGeocodingCompleted && mIsEndLocationGeocodingCompleted){
+        if (mIsStartLocationGeocodingCompleted && mIsEndLocationGeocodingCompleted) {
             requestTrip();
         }
     }
@@ -1535,7 +1536,6 @@ public class MainFragment extends Fragment implements
 
         this.getFragmentListener().setOTPBundle(bundle);
     }
-
 
 
     private void restoreState(Bundle savedInstanceState) {
@@ -1773,7 +1773,7 @@ public class MainFragment extends Fragment implements
                         .getPosition().longitude;
                 endLocationString = mEndMarker.getPosition().latitude + "," + mEndMarker
                         .getPosition().longitude;
-                if (startLocationString.equals(endLocationString)){
+                if (startLocationString.equals(endLocationString)) {
                     Toast.makeText(MainFragment.this.mApplicationContext, mApplicationContext.getResources()
                             .getString(R.string.toast_tripplanner_origin_destination_are_equal), Toast.LENGTH_SHORT)
                             .show();
@@ -1827,14 +1827,14 @@ public class MainFragment extends Fragment implements
         request.setModes(getSelectedTraverseModeSet());
 
         Server selectedServer = mOTPApp.getSelectedServer();
-        if (selectedServer != null && selectedServer.getOffersBikeRental()){
-            if (mBtnModeRentedBike.isChecked()){
+        if (selectedServer != null && selectedServer.getOffersBikeRental()) {
+            if (mBtnModeRentedBike.isChecked()) {
                 request.setBikeRental(true);
             }
         }
 
         Integer defaultMaxWalkInt = mApplicationContext.getResources()
-                 .getInteger(R.integer.max_walking_distance);
+                .getInteger(R.integer.max_walking_distance);
 
         try {
             Double maxWalk = Double
@@ -1932,7 +1932,7 @@ public class MainFragment extends Fragment implements
      * <p>
      * Replaces fewest transfers with safer trip options.
      *
-     * @param enable when true spinner is set to bike values
+     * @param enable                  when true spinner is set to bike values
      * @param updateOptimizationValue when true optimization spinner values are modified to select
      *                                by default "custom trip" by bike and restore previous value
      *                                when bike mode is abandoned
@@ -1941,8 +1941,8 @@ public class MainFragment extends Fragment implements
         ArrayAdapter<OptimizeSpinnerItem> optimizationAdapter;
         int newOptimizationValue;
 
-        if (updateOptimizationValue){
-            if (enable){
+        if (updateOptimizationValue) {
+            if (enable) {
                 mOptimizationValueToRestoreWhenNoBike = mDdlOptimization.getCheckedItemPosition();
             }
         }
@@ -1978,18 +1978,15 @@ public class MainFragment extends Fragment implements
                                     OptimizeType.TRANSFERS)});
             mDdlOptimization.setAdapter(optimizationAdapter);
         }
-        if (updateOptimizationValue){
-            if (enable){
+        if (updateOptimizationValue) {
+            if (enable) {
                 newOptimizationValue = 2;
-            }
-            else{
-                if (mOptimizationValueToRestoreWhenNoBike != -1){
+            } else {
+                if (mOptimizationValueToRestoreWhenNoBike != -1) {
                     newOptimizationValue = mOptimizationValueToRestoreWhenNoBike;
-                }
-                else if (mPrefs.getInt(OTPApp.PREFERENCE_KEY_LAST_OPTIMIZATION, -1) != -1){
+                } else if (mPrefs.getInt(OTPApp.PREFERENCE_KEY_LAST_OPTIMIZATION, -1) != -1) {
                     newOptimizationValue = mPrefs.getInt(OTPApp.PREFERENCE_KEY_LAST_OPTIMIZATION, -1);
-                }
-                else{
+                } else {
                     newOptimizationValue = 0;
                 }
             }
@@ -2051,15 +2048,15 @@ public class MainFragment extends Fragment implements
      * @param isStartTextbox to select text box to removes focus from
      */
     private void removeFocus(boolean isStartTextbox) {
-        if (!mMapFailed){
+        if (!mMapFailed) {
             if (isStartTextbox) {
                 mTbStartLocation.clearFocus();
-                if (!mTbEndLocation.hasFocus()){
+                if (!mTbEndLocation.hasFocus()) {
                     mMap.setOnMapClickListener(null);
                 }
             } else {
                 mTbEndLocation.clearFocus();
-                if (!mTbStartLocation.hasFocus()){
+                if (!mTbStartLocation.hasFocus()) {
                     mMap.setOnMapClickListener(null);
                 }
             }
@@ -2128,7 +2125,7 @@ public class MainFragment extends Fragment implements
      * <p>
      * OTPApp can be requested calling to getActivity by other fragments.
      *
-     * @param s new server to be set
+     * @param s         new server to be set
      * @param restartUI if true UI will be restarted to adapt to new server
      */
     private void setSelectedServer(Server s, boolean restartUI) {
@@ -2200,7 +2197,7 @@ public class MainFragment extends Fragment implements
         mIsEndLocationGeocodingCompleted = false;
 
         mTbEndLocation.requestFocus();
-        
+
         setTextBoxLocation("", false);
     }
 
@@ -2341,7 +2338,7 @@ public class MainFragment extends Fragment implements
      * @return the new marker created
      */
     private Marker addStartEndMarker(LatLng latLng, boolean isStartMarker) {
-        if (!mMapFailed){
+        if (!mMapFailed) {
             MarkerOptions markerOptions = new MarkerOptions().position(latLng)
                     .draggable(true);
             if (isStartMarker) {
@@ -2560,12 +2557,11 @@ public class MainFragment extends Fragment implements
 
         if (address.equalsIgnoreCase(this.getResources().getString(R.string.text_box_my_location))) {
             if (mCurrentLatLng != null) {
-                if (isStartTextBox){
+                if (isStartTextBox) {
                     mIsStartLocationGeocodingCompleted = false;
                     mGeoCodingTask.execute(address, String.valueOf(mCurrentLatLng.latitude),
                             String.valueOf(mCurrentLatLng.longitude));
-                }
-                else{
+                } else {
                     mIsEndLocationGeocodingCompleted = false;
                     mGeoCodingTask.execute(address, String.valueOf(mCurrentLatLng.latitude),
                             String.valueOf(mCurrentLatLng.longitude));
@@ -2578,19 +2574,17 @@ public class MainFragment extends Fragment implements
             }
         } else {
             String latString, lonString;
-            if (originalLat != null && originalLon != null){
+            if (originalLat != null && originalLon != null) {
                 latString = originalLat.toString();
                 lonString = originalLon.toString();
-            }
-            else {
+            } else {
                 latString = null;
                 lonString = null;
             }
-            if (isStartTextBox){
+            if (isStartTextBox) {
                 mIsStartLocationGeocodingCompleted = false;
                 mGeoCodingTask.execute(address, latString, lonString);
-            }
-            else{
+            } else {
                 mIsEndLocationGeocodingCompleted = false;
                 mGeoCodingTask.execute(address, latString, lonString);
             }
@@ -2641,7 +2635,7 @@ public class MainFragment extends Fragment implements
     public void updateSelectedServer(boolean updateUI) {
         long serverId;
         Server server;
-        if (!mMapFailed){
+        if (!mMapFailed) {
             if (mPrefs.getBoolean(OTPApp.PREFERENCE_KEY_SELECTED_CUSTOM_SERVER, false)) {
                 server = new Server(mPrefs.getString(OTPApp.PREFERENCE_KEY_CUSTOM_SERVER_URL, ""),
                         mApplicationContext);
@@ -2654,18 +2648,17 @@ public class MainFragment extends Fragment implements
                 }
                 WeakReference<Activity> weakContext = new WeakReference<Activity>(getActivity());
 
-                if (mCustomServerMetadata == null){
+                if (mCustomServerMetadata == null) {
                     MetadataRequest metaRequest = new MetadataRequest(weakContext, mApplicationContext,
                             this);
                     metaRequest.execute(mPrefs.getString(OTPApp.PREFERENCE_KEY_CUSTOM_SERVER_URL, ""));
-                }
-                else{
+                } else {
                     onMetadataRequestComplete(mCustomServerMetadata, false);
                 }
 
                 Log.d(OTPApp.TAG, "Now using custom OTP server: " + mPrefs
                         .getString(OTPApp.PREFERENCE_KEY_CUSTOM_SERVER_URL, ""));
-            } else if ((serverId = mPrefs.getLong(OTPApp.PREFERENCE_KEY_SELECTED_SERVER, 0)) != 0){
+            } else if ((serverId = mPrefs.getLong(OTPApp.PREFERENCE_KEY_SELECTED_SERVER, 0)) != 0) {
                 mCustomServerMetadata = null;
                 ServersDataSource dataSource = ServersDataSource.getInstance(mApplicationContext);
                 dataSource.open();
@@ -2676,7 +2669,7 @@ public class MainFragment extends Fragment implements
                 setSelectedServer(server, updateUI);
                 addBoundariesRectangle(server);
 
-                if (updateUI){
+                if (updateUI) {
                     LatLng mCurrentLatLng = getLastLocation();
 
                     if ((mCurrentLatLng != null) && (LocationUtil
@@ -2695,25 +2688,23 @@ public class MainFragment extends Fragment implements
                 Log.d(OTPApp.TAG, "Server not selected yet, should be first start or app update");
                 return;
             }
-            if (server != null){
-                if (server.getOffersBikeRental()){
+            if (server != null) {
+                if (server.getOffersBikeRental()) {
                     mBtnModeRentedBike.setEnabled(true);
-                }
-                else{
+                } else {
                     mBtnModeRentedBike.setChecked(false);
                     mBtnModeRentedBike.setEnabled(false);
                 }
-                if (server.getOffersBikeRental() && mBtnModeRentedBike.isChecked()){
+                if (server.getOffersBikeRental() && mBtnModeRentedBike.isChecked()) {
                     BikeRentalLoad bikeRentalGetStations = new BikeRentalLoad(mApplicationContext, true,
                             this);
                     bikeRentalGetStations.execute(server.getBaseURL());
-                }
-                else{
+                } else {
                     removeBikeStations();
                     listenForBikeUpdates(false);
                 }
                 if (startLocationPlacesAutoCompleteAdapter != null
-                        && endLocationPlacesAutoCompleteAdapter != null){
+                        && endLocationPlacesAutoCompleteAdapter != null) {
                     startLocationPlacesAutoCompleteAdapter.setSelectedServer(server);
                     endLocationPlacesAutoCompleteAdapter.setSelectedServer(server);
                 }
@@ -2887,7 +2878,7 @@ public class MainFragment extends Fragment implements
         LatLng latlng = new LatLng(address.getLatitude(), address.getLongitude());
         LatLng mCurrentLatLng = getLastLocation();
 
-        if (!mMapFailed){
+        if (!mMapFailed) {
             if (isStartLocation) {
                 if (mIsStartLocationChangedByUser) {
                     if (mEndMarker != null) {
@@ -3009,9 +3000,9 @@ public class MainFragment extends Fragment implements
      *
      * @param itinerary     the information to be drawn
      * @param animateCamera type of camera animation: - 0 camera wouldn't be animated
-     *                                                - 1 animated to fit the route
-     *                                                - 2 animated to fit first transit marker if
-     *                                                  any, otherwise to route.
+     *                      - 1 animated to fit the route
+     *                      - 2 animated to fit first transit marker if
+     *                      any, otherwise to route.
      */
     public void showRouteOnMap(List<Leg> itinerary, int animateCamera) {
         Log.d(OTPApp.TAG,
@@ -3079,8 +3070,8 @@ public class MainFragment extends Fragment implements
             }
             mCustomInfoWindowAdapter.setMarkers(mModeMarkers);
             mMap.setInfoWindowAdapter(mCustomInfoWindowAdapter);
-            if (animateCamera == 1){
-                if (firstTransitMarker != null){
+            if (animateCamera == 1) {
+                if (firstTransitMarker != null) {
                     firstTransitMarker.showInfoWindow();
                 }
             }
@@ -3088,14 +3079,14 @@ public class MainFragment extends Fragment implements
                 LatLngBounds routeBounds = boundsCreator.build();
                 if (((SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map))
                         .getMap()
-                        != null){
+                        != null) {
                     showRouteOnMapAnimateCamera(routeBounds, firstTransitMarker, animateCamera);
                 }
             }
         }
     }
 
-    private MarkerOptions generateModeMarkerOptions(Leg leg, LatLng location, int stepIndex){
+    private MarkerOptions generateModeMarkerOptions(Leg leg, LatLng location, int stepIndex) {
         MarkerOptions modeMarkerOption = new MarkerOptions().position(location);
         Drawable drawable = getResources().getDrawable(getPathIcon(leg.mode));
         if (drawable != null) {
@@ -3112,7 +3103,7 @@ public class MainFragment extends Fragment implements
         return modeMarkerOption;
     }
 
-    private String generateModeMarkerTitle(Leg leg, int stepIndex){
+    private String generateModeMarkerTitle(Leg leg, int stepIndex) {
         TraverseMode traverseMode = TraverseMode.valueOf(leg.mode);
         String title = "";
 
@@ -3123,8 +3114,7 @@ public class MainFragment extends Fragment implements
                     + " " + getResources().getString(R.string.map_markers_connector_before_stop) + " "
                     + DirectionsGenerator.getLocalizedStreetName(leg.from.name,
                     mApplicationContext.getResources());
-        }
-        else{
+        } else {
             if (traverseMode.equals(TraverseMode.WALK)) {
                 title = stepIndex + ". " + getResources()
                         .getString(R.string.map_markers_mode_walk_action)
@@ -3151,7 +3141,7 @@ public class MainFragment extends Fragment implements
             CharSequence spannableSnippet = ConversionUtils
                     .getTimeWithContext(mApplicationContext, leg.agencyTimeZoneOffset,
                             Long.parseLong(leg.startTime), false);
-            if (leg.realTime){
+            if (leg.realTime) {
                 int color = ConversionUtils.getDelayColor(leg.departureDelay, mApplicationContext);
                 spannableSnippet = ConversionUtils
                         .getTimeWithContext(mApplicationContext, leg.agencyTimeZoneOffset,
@@ -3161,8 +3151,7 @@ public class MainFragment extends Fragment implements
                 snippet = TextUtils.concat(spannableSnippet, " ",
                         getResources().getString(R.string.step_by_step_non_transit_to),
                         " ", leg.headsign);
-            }
-            else{
+            } else {
                 snippet = spannableSnippet;
             }
         } else {
@@ -3172,7 +3161,7 @@ public class MainFragment extends Fragment implements
                     + ConversionUtils
                     .getFormattedDistance(leg.distance, mApplicationContext);
         }
-        return  snippet;
+        return snippet;
     }
 
     /**
@@ -3192,16 +3181,16 @@ public class MainFragment extends Fragment implements
      * the new bounds.
      * - Pass the new bounds to the camera movement function and correct result will be obtained.
      *
-     * @param routeBounds original route bounds
+     * @param routeBounds        original route bounds
      * @param firstTransitMarker position of first transit stop that will be centered
-     * @param animateCamera type of camera animation: - 0 camera wouldn't be animated
-     *                                                - 1 animated to fit the route
-     *                                                - 2 animated to fit first transit marker if
-     *                                                  any, otherwise to route.
-     *                                                - 3 moved with no animation to fit first
-     *                                                transit marker if any, otherwise to route.
+     * @param animateCamera      type of camera animation: - 0 camera wouldn't be animated
+     *                           - 1 animated to fit the route
+     *                           - 2 animated to fit first transit marker if
+     *                           any, otherwise to route.
+     *                           - 3 moved with no animation to fit first
+     *                           transit marker if any, otherwise to route.
      */
-    private void showRouteOnMapAnimateCamera(LatLngBounds routeBounds, Marker firstTransitMarker, int animateCamera){
+    private void showRouteOnMapAnimateCamera(LatLngBounds routeBounds, Marker firstTransitMarker, int animateCamera) {
 
         int windowWidth = getResources().getDisplayMetrics().widthPixels;
         int windowHeight = getResources().getDisplayMetrics().heightPixels;
@@ -3212,20 +3201,20 @@ public class MainFragment extends Fragment implements
         Point northeastInScreen = mMap.getProjection().toScreenLocation(routeBounds.northeast);
         Point southwestInScreen = mMap.getProjection().toScreenLocation(routeBounds.southwest);
 
-        if ((firstTransitMarker != null) && (animateCamera == 1)){
+        if ((firstTransitMarker != null) && (animateCamera == 1)) {
             Point firstTransitMarkerInScreen = mMap.getProjection().toScreenLocation(firstTransitMarker.getPosition());
             int maxDistanceToRouteEdge = 0;
             int distanceHorizontalNortheast = northeastInScreen.x - firstTransitMarkerInScreen.x;
             int distanceVerticalNortheast = firstTransitMarkerInScreen.y - northeastInScreen.y;
             int distanceHorizontalSouthwest = firstTransitMarkerInScreen.x - southwestInScreen.x;
             int distanceVerticalSouthwest = southwestInScreen.y - firstTransitMarkerInScreen.y;
-            if (distanceHorizontalNortheast > maxDistanceToRouteEdge){
+            if (distanceHorizontalNortheast > maxDistanceToRouteEdge) {
                 maxDistanceToRouteEdge = distanceHorizontalNortheast;
             }
-            if (distanceVerticalNortheast > maxDistanceToRouteEdge){
+            if (distanceVerticalNortheast > maxDistanceToRouteEdge) {
                 maxDistanceToRouteEdge = distanceVerticalNortheast;
             }
-            if (distanceHorizontalSouthwest > maxDistanceToRouteEdge){
+            if (distanceHorizontalSouthwest > maxDistanceToRouteEdge) {
                 maxDistanceToRouteEdge = distanceHorizontalSouthwest;
             }
             if (distanceVerticalSouthwest > maxDistanceToRouteEdge) {
@@ -3238,14 +3227,14 @@ public class MainFragment extends Fragment implements
             LatLng newLimitSouthWestLatLng = mMap.getProjection().fromScreenLocation(newLimitSouthWest);
             LatLng newLimitNorthEastLatLng = mMap.getProjection().fromScreenLocation(newLimitNorthEast);
 
-            if (newLimitSouthWestLatLng != null && newLimitNorthEastLatLng != null){
-                if (newLimitNorthEastLatLng.latitude < newLimitSouthWestLatLng.latitude){
+            if (newLimitSouthWestLatLng != null && newLimitNorthEastLatLng != null) {
+                if (newLimitNorthEastLatLng.latitude < newLimitSouthWestLatLng.latitude) {
                     newLimitNorthEastLatLng = new LatLng(newLimitSouthWestLatLng.latitude,
                             newLimitNorthEastLatLng.longitude);
                     newLimitSouthWestLatLng = new LatLng(newLimitNorthEastLatLng.latitude,
                             newLimitSouthWestLatLng.longitude);
                 }
-                if (newLimitNorthEastLatLng.longitude < newLimitSouthWestLatLng.longitude){
+                if (newLimitNorthEastLatLng.longitude < newLimitSouthWestLatLng.longitude) {
                     newLimitNorthEastLatLng = new LatLng(newLimitNorthEastLatLng.latitude,
                             newLimitSouthWestLatLng.longitude);
                     newLimitSouthWestLatLng = new LatLng(newLimitSouthWestLatLng.latitude,
@@ -3261,17 +3250,16 @@ public class MainFragment extends Fragment implements
         int padding = routeDefaultPadding;
         int maxHorizontalPadding = (limitNortheastRight - limitSouthwestLeft) / 2;
         int maxVerticalPadding = (limitSouthwestBottom - limitNortheastTop) / 2;
-        if (padding > maxHorizontalPadding){
+        if (padding > maxHorizontalPadding) {
             padding = maxHorizontalPadding;
         }
-        if (padding > maxVerticalPadding){
+        if (padding > maxVerticalPadding) {
             padding = maxVerticalPadding;
         }
 
-        if (animateCamera == 3){
+        if (animateCamera == 3) {
             mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(routeBounds, padding));
-        }
-        else{
+        } else {
             mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(routeBounds, padding));
         }
     }
@@ -3333,7 +3321,7 @@ public class MainFragment extends Fragment implements
 
     @Override
     public void onTripRequestComplete(List<Itinerary> itineraries,
-            String currentRequestString) {
+                                      String currentRequestString) {
         if (getActivity() != null) {
             ConversionUtils.fixTimezoneOffsets(itineraries,
                     mPrefs.getBoolean(OTPApp.PREFERENCE_KEY_USE_DEVICE_TIMEZONE, false));
@@ -3394,12 +3382,12 @@ public class MainFragment extends Fragment implements
                             .getTimeWithContext(mApplicationContext, leg.agencyTimeZoneOffset,
                                     Long.parseLong(leg.startTime), false).toString();
                     itinerarySummaryList[i] += ". " + ConversionUtils
-                            .getRouteShortNameSafe(leg.routeShortName,leg.routeLongName,
+                            .getRouteShortNameSafe(leg.routeShortName, leg.routeLongName,
                                     mApplicationContext);
                     itinerarySummaryList[i] += " - " + ConversionUtils
                             .getFormattedDurationTextNoSeconds(tripDuration, false,
                                     mApplicationContext);
-                    if (leg.headsign!= null) {
+                    if (leg.headsign != null) {
                         itinerarySummaryList[i] += " - " + leg.headsign;
                     }
                     isTransitIsTagSet = true;
@@ -3427,7 +3415,7 @@ public class MainFragment extends Fragment implements
 
     @Override
     public void onOTPGeocodingComplete(final boolean isStartTextbox,
-            ArrayList<CustomAddress> addressesReturn, boolean geocodingForMarker) {
+                                       ArrayList<CustomAddress> addressesReturn, boolean geocodingForMarker) {
         if (getActivity() != null) {
 
             try {
@@ -3489,7 +3477,7 @@ public class MainFragment extends Fragment implements
     }
 
     public void useNewAddress(final boolean isStartTextbox, CustomAddress newAddress,
-                                    boolean geocodingForMarker) {
+                              boolean geocodingForMarker) {
         removeFocus(isStartTextbox);
         if (isStartTextbox) {
             mIsStartLocationGeocodingCompleted = true;
@@ -3509,7 +3497,7 @@ public class MainFragment extends Fragment implements
     @Override
     public void onMetadataRequestComplete(GraphMetadata metadata, boolean updateUI) {
         if (getActivity() != null && !mMapFailed) {
-            if (metadata != null){
+            if (metadata != null) {
                 mCustomServerMetadata = metadata;
 
                 double lowerLeftLatitude = metadata.getLowerLeftLatitude();
@@ -3539,7 +3527,7 @@ public class MainFragment extends Fragment implements
 
                 LatLng mCurrentLatLng = getLastLocation();
 
-                if (updateUI){
+                if (updateUI) {
                     if ((mCurrentLatLng != null) && (LocationUtil
                             .checkPointInBoundingBox(mCurrentLatLng, selectedServer))) {
                         mMap.animateCamera(CameraUpdateFactory
@@ -3562,7 +3550,7 @@ public class MainFragment extends Fragment implements
      *                      Google ones
      */
     public void updateOverlay(String overlayString) {
-        if (!mMapFailed){
+        if (!mMapFailed) {
             int tile_width = OTPApp.CUSTOM_MAP_TILE_SMALL_WIDTH;
             int tile_height = OTPApp.CUSTOM_MAP_TILE_SMALL_HEIGHT;
 
@@ -3624,18 +3612,22 @@ public class MainFragment extends Fragment implements
      * @return a LatLng object with the most updated user coordinates
      */
     public LatLng getLastLocation() {
-        if (mGoogleApiClient != null) {
-            if (mGoogleApiClient.isConnected()) {
-                Location loc = FusedLocationApi.getLastLocation(mGoogleApiClient);
+        int permissionCheck = ContextCompat.checkSelfPermission(getActivity().getApplicationContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION);
+        if (permissionCheck == 1) {
+            if (mGoogleApiClient != null) {
+                if (mGoogleApiClient.isConnected()) {
+                    Location loc = FusedLocationApi.getLastLocation(mGoogleApiClient);
 
-                if (loc != null) {
-                    LatLng mCurrentLocation = new LatLng(loc.getLatitude(), loc.getLongitude());
-                    mSavedLastLocation = mCurrentLocation;
-                    return mCurrentLocation;
+                    if (loc != null) {
+                        LatLng mCurrentLocation = new LatLng(loc.getLatitude(), loc.getLongitude());
+                        mSavedLastLocation = mCurrentLocation;
+                        return mCurrentLocation;
+                    }
                 }
-            }
-            if (mSavedLastLocation != null) {
-                return mSavedLastLocation;
+                if (mSavedLastLocation != null) {
+                    return mSavedLastLocation;
+                }
             }
         }
         return null;
@@ -3686,7 +3678,7 @@ public class MainFragment extends Fragment implements
      */
     @Override
     public void onConnected(Bundle connectionHint) {
-        Location mCurrentLocation = FusedLocationApi.getLastLocation(mGoogleApiClient);
+        @SuppressLint("MissingPermission") Location mCurrentLocation = FusedLocationApi.getLastLocation(mGoogleApiClient);
         boolean autodetectServerTriggered = false;
 
         if ((!mMapFailed)) {
@@ -3728,7 +3720,7 @@ public class MainFragment extends Fragment implements
                             runAutoDetectServer(mCurrentLatLng, true);
                         }
                     }
-                    if (!autodetectServerTriggered){
+                    if (!autodetectServerTriggered) {
                         if (mAppStarts) {
                             Server selectedServer = mOTPApp.getSelectedServer();
                             if ((selectedServer != null) && selectedServer.areBoundsSet()) {
@@ -3743,7 +3735,7 @@ public class MainFragment extends Fragment implements
                                                     getServerInitialZoom(selectedServer)));
                                     setMarker(true, getServerCenter(selectedServer), false, true);
                                 }
-                            } else if(selectedServer != null) {
+                            } else if (selectedServer != null) {
                                 mMap.animateCamera(CameraUpdateFactory
                                         .newLatLngZoom(mCurrentLatLng,
                                                 getServerInitialZoom(selectedServer)));
@@ -3796,7 +3788,7 @@ public class MainFragment extends Fragment implements
         PolylineOptions boundariesPolylineOptions = new PolylineOptions()
                 .addAll(bounds)
                 .color(Color.GRAY);
-        if (mBoundariesPolyline != null){
+        if (mBoundariesPolyline != null) {
             mBoundariesPolyline.remove();
         }
         mBoundariesPolyline = mMap.addPolyline(boundariesPolylineOptions);
@@ -3837,7 +3829,7 @@ public class MainFragment extends Fragment implements
 
     @Override
     public void onRangeSeekBarValuesChanged(RangeSeekBar<?> bar,
-            Double minValue, Double maxValue) {
+                                            Double minValue, Double maxValue) {
         SharedPreferences.Editor editor = mPrefs.edit();
         editor.putFloat(OTPApp.PREFERENCE_KEY_LAST_BIKE_TRIANGLE_MIN_VALUE, minValue.floatValue());
         editor.putFloat(OTPApp.PREFERENCE_KEY_LAST_BIKE_TRIANGLE_MAX_VALUE, maxValue.floatValue());
@@ -3852,10 +3844,10 @@ public class MainFragment extends Fragment implements
     @Override
     public void onBikeRentalStationListLoad(BikeRentalStationList bikeRentalStationList) {
         removeBikeStations();
-        if (mBtnModeRentedBike.isChecked()){
-            if (bikeRentalStationList != null){
+        if (mBtnModeRentedBike.isChecked()) {
+            if (bikeRentalStationList != null) {
                 List<BikeRentalStation> listOfBikeRentalStations = bikeRentalStationList.stations;
-                if ((listOfBikeRentalStations != null) && !listOfBikeRentalStations.isEmpty()){
+                if ((listOfBikeRentalStations != null) && !listOfBikeRentalStations.isEmpty()) {
                     mBikeRentalStations = new HashMap<Marker, BikeRentalStationInfo>(listOfBikeRentalStations.size());
 
                     MarkerOptions bikeRentalStationMarkerOption = new MarkerOptions();
@@ -3870,7 +3862,7 @@ public class MainFragment extends Fragment implements
                         Log.e(OTPApp.TAG, "Error obtaining drawable to add bike rental icons to the map");
                     }
 
-                    for (BikeRentalStation bikeRentalStation : listOfBikeRentalStations){
+                    for (BikeRentalStation bikeRentalStation : listOfBikeRentalStations) {
                         LatLng position = new LatLng(bikeRentalStation.y,
                                 bikeRentalStation.x);
                         bikeRentalStationMarkerOption.position(position);
@@ -3880,7 +3872,7 @@ public class MainFragment extends Fragment implements
                                 bikeRentalStation.bikesAvailable + " | " + getResources()
                                 .getString(R.string.map_markers_bike_rental_available_spaces) + " " +
                                 bikeRentalStation.spacesAvailable);
-                        if (!mMapFailed){
+                        if (!mMapFailed) {
                             Marker bikeRentalStationMarker = mMap.addMarker(bikeRentalStationMarkerOption);
                             BikeRentalStationInfo bikeRentalStationInfo = new BikeRentalStationInfo(position,
                                     bikeRentalStation.name);
@@ -3890,8 +3882,7 @@ public class MainFragment extends Fragment implements
                     }
                     listenForBikeUpdates(true);
                 }
-            }
-            else{
+            } else {
                 Toast.makeText(mApplicationContext, mApplicationContext.getResources().getString(R.string.toast_bike_rental_load_request_error),
                         Toast.LENGTH_SHORT).show();
             }
@@ -3900,7 +3891,7 @@ public class MainFragment extends Fragment implements
 
     @Override
     public void onBikeRentalStationListUpdate(BikeRentalStationList bikeRentalStationList) {
-        if (getActivity() != null){
+        if (getActivity() != null) {
             if (bikeRentalStationList != null) {
                 List<BikeRentalStation> listOfBikeRentalStations = bikeRentalStationList.stations;
                 if ((listOfBikeRentalStations != null) && !listOfBikeRentalStations.isEmpty()
@@ -3920,8 +3911,7 @@ public class MainFragment extends Fragment implements
                         }
                     }
                 }
-            }
-            else{
+            } else {
                 Toast.makeText(mApplicationContext, mApplicationContext.getResources().getString(R.string.toast_bike_rental_load_request_error),
                         Toast.LENGTH_SHORT).show();
                 listenForBikeUpdates(false);
@@ -3935,19 +3925,18 @@ public class MainFragment extends Fragment implements
         listenForBikeUpdates(false);
     }
 
-    public void listenForBikeUpdates(boolean enable){
-        if (enable){
+    public void listenForBikeUpdates(boolean enable) {
+        if (enable) {
             mApplicationContext.registerReceiver(new AlarmReceiver(), mIntentFilter);
             mAlarmMgr.setInexactRepeating(AlarmManager.ELAPSED_REALTIME,
                     OTPApp.DEFAULT_UPDATE_INTERVAL_BIKE_RENTAL,
                     OTPApp.DEFAULT_UPDATE_INTERVAL_BIKE_RENTAL, mAlarmIntentBikeRentalUpdate);
-        }
-        else{
+        } else {
             if (!mApplicationContext.getPackageManager()
                     .queryBroadcastReceivers(mBikeRentalUpdateIntent, mBikeRentalUpdateIntent.getFlags())
-                    .isEmpty()){
+                    .isEmpty()) {
                 mApplicationContext.unregisterReceiver(mAlarmReceiver);
-                if (!mIsAlarmTripTimeUpdateActive){
+                if (!mIsAlarmTripTimeUpdateActive) {
                     mApplicationContext.unregisterReceiver(mAlarmReceiver);
                 }
             }
@@ -3955,7 +3944,7 @@ public class MainFragment extends Fragment implements
         }
     }
 
-    public void removeBikeStations(){
+    public void removeBikeStations() {
         if (mBikeRentalStations != null) {
             for (Map.Entry<Marker, BikeRentalStationInfo> entry : mBikeRentalStations.entrySet()) {
                 entry.getKey().remove();
@@ -3964,24 +3953,23 @@ public class MainFragment extends Fragment implements
         }
     }
 
-    public void listenForTripTimeUpdates(boolean enable, long timeToStartUpdates){
-        if (enable){
+    public void listenForTripTimeUpdates(boolean enable, long timeToStartUpdates) {
+        if (enable) {
             Calendar calTimeToStartUpdates = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
             calTimeToStartUpdates.setTime(new Date(timeToStartUpdates));
             calTimeToStartUpdates.add(Calendar.HOUR_OF_DAY, -1);
             long timeToStartUpdatesProcessed = calTimeToStartUpdates.getTimeInMillis();
-            if (timeToStartUpdatesProcessed < (System.currentTimeMillis() - 1000)){
+            if (timeToStartUpdatesProcessed < (System.currentTimeMillis() - 1000)) {
                 timeToStartUpdatesProcessed = System.currentTimeMillis() + 1000;
             }
             mApplicationContext.registerReceiver(new AlarmReceiver(), mIntentFilter);
             mAlarmMgr.setInexactRepeating(AlarmManager.RTC, timeToStartUpdatesProcessed,
                     OTPApp.DEFAULT_UPDATE_INTERVAL_TRIP_TIME, mAlarmIntentTripTimeUpdate);
-        }
-        else{
+        } else {
             if (!mApplicationContext.getPackageManager()
                     .queryBroadcastReceivers(mTripTimeUpdateIntent, mTripTimeUpdateIntent.getFlags())
-                    .isEmpty()){
-                if (!mIsAlarmBikeRentalUpdateActive){
+                    .isEmpty()) {
+                if (!mIsAlarmBikeRentalUpdateActive) {
                     mApplicationContext.unregisterReceiver(mAlarmReceiver);
                 }
             }
@@ -3991,41 +3979,41 @@ public class MainFragment extends Fragment implements
 
     @Override
     public void onUpdateTripTimesComplete(HashMap<String, List<TripTimeShort>> timesUpdatesForTrips) {
-        if (getActivity() != null){
+        if (getActivity() != null) {
             List<Itinerary> itineraries;
-            if ((itineraries = getFragmentListener().getCurrentItineraryList()) != null){
-                if ((timesUpdatesForTrips != null) && !timesUpdatesForTrips.isEmpty()){
+            if ((itineraries = getFragmentListener().getCurrentItineraryList()) != null) {
+                if ((timesUpdatesForTrips != null) && !timesUpdatesForTrips.isEmpty()) {
                     long lastLegTime = 0;
                     Leg lastLeg = itineraries.get(0).legs.get(0);
-                    for (Itinerary itinerary : itineraries){
-                        for (Leg leg : itinerary.legs){
+                    for (Itinerary itinerary : itineraries) {
+                        for (Leg leg : itinerary.legs) {
                             long legEndTimeLong = Long.parseLong(leg.startTime);
-                            if (legEndTimeLong > lastLegTime){
+                            if (legEndTimeLong > lastLegTime) {
                                 lastLegTime = legEndTimeLong;
                                 lastLeg = leg;
                             }
                             List<TripTimeShort> tripsTimesUpdates;
                             if ((tripsTimesUpdates
                                     = timesUpdatesForTrips.get(leg.agencyId + ":" + leg.tripId))
-                                    != null){
+                                    != null) {
                                 TripTimeShort firstStopUpdate = null;
                                 TripTimeShort lastStopUpdate = null;
-                                for (TripTimeShort tripTimeUdapteForStop : tripsTimesUpdates){
-                                    if (tripTimeUdapteForStop.stopId.equals(leg.agencyId + ":" + leg.from.stopCode)){
+                                for (TripTimeShort tripTimeUdapteForStop : tripsTimesUpdates) {
+                                    if (tripTimeUdapteForStop.stopId.equals(leg.agencyId + ":" + leg.from.stopCode)) {
                                         firstStopUpdate = tripTimeUdapteForStop;
                                     }
-                                    if (tripTimeUdapteForStop.stopId.equals(leg.agencyId + ":" + leg.to.stopCode)){
+                                    if (tripTimeUdapteForStop.stopId.equals(leg.agencyId + ":" + leg.to.stopCode)) {
                                         lastStopUpdate = tripTimeUdapteForStop;
                                     }
                                 }
-                                if ((firstStopUpdate != null) && (lastStopUpdate != null)){
+                                if ((firstStopUpdate != null) && (lastStopUpdate != null)) {
                                     int legsUpdated = updateLeg(leg, firstStopUpdate, lastStopUpdate);
-                                    if (legsUpdated != 0){
+                                    if (legsUpdated != 0) {
                                         for (Map.Entry<Marker, TripInfo> entry : mModeMarkers.entrySet()) {
-                                            if (leg.tripId.equals(entry.getValue().getTripId())){
+                                            if (leg.tripId.equals(entry.getValue().getTripId())) {
                                                 entry.getValue().setSnippet(generateModeMarkerSnippet(leg));
                                                 entry.getValue().setDelayInSeconds(leg.departureDelay);
-                                                if (entry.getKey().isInfoWindowShown()){
+                                                if (entry.getKey().isInfoWindowShown()) {
                                                     entry.getKey().showInfoWindow();
                                                 }
                                             }
@@ -4036,21 +4024,21 @@ public class MainFragment extends Fragment implements
                             }
                         }
                     }
-                    if (isTripOver(lastLeg)){
+                    if (isTripOver(lastLeg)) {
                         listenForTripTimeUpdates(false, 0);
                     }
-                } else{
+                } else {
                     Toast.makeText(mApplicationContext,
                             getResources()
-                                .getString(R.string.toast_realtime_updates_fail),
-                                Toast.LENGTH_SHORT).show();
+                                    .getString(R.string.toast_realtime_updates_fail),
+                            Toast.LENGTH_SHORT).show();
                     listenForTripTimeUpdates(false, 0);
                 }
             }
         }
     }
 
-    private boolean isTripOver(Leg leg){
+    private boolean isTripOver(Leg leg) {
         Calendar calTimeToStopUpdates = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
         calTimeToStopUpdates.setTime(new Date(Long.parseLong(leg.endTime)));
         calTimeToStopUpdates.add(Calendar.MILLISECOND, leg.agencyTimeZoneOffset);
@@ -4065,44 +4053,43 @@ public class MainFragment extends Fragment implements
     /**
      * Updates leg fields with departure and arrival new trip times.
      *
-     * @param leg the leg to update
+     * @param leg                      the leg to update
      * @param departureTripTimesUpdate departure new trip times
-     * @param arrivalTripTimesUpdate arrival new trip times
+     * @param arrivalTripTimesUpdate   arrival new trip times
      * @return 0 if none are updated, 1 if departure is updated, 2 if arrival is updated, 3 if both
      * are updated
      */
     private int updateLeg(Leg leg, TripTimeShort departureTripTimesUpdate,
-                              TripTimeShort arrivalTripTimesUpdate){
+                          TripTimeShort arrivalTripTimesUpdate) {
         int updatedLegs = 0;
-        if (leg.departureDelay != departureTripTimesUpdate.departureDelay){
+        if (leg.departureDelay != departureTripTimesUpdate.departureDelay) {
             CharSequence oldDepartureTime = ConversionUtils
                     .getTimeWithContext(mApplicationContext, leg.agencyTimeZoneOffset,
                             Long.parseLong(leg.startTime), false);
             Long scheduledStartTime = Long.parseLong(leg.startTime) - leg.departureDelay * 1000;
             leg.departureDelay = departureTripTimesUpdate.departureDelay;
-            leg.startTime = ((Long)(scheduledStartTime + leg.departureDelay * 1000)).toString();
+            leg.startTime = ((Long) (scheduledStartTime + leg.departureDelay * 1000)).toString();
             CharSequence newDepartureTime = ConversionUtils
                     .getTimeWithContext(mApplicationContext, leg.agencyTimeZoneOffset,
                             Long.parseLong(leg.startTime), false);
-            if (!oldDepartureTime.equals(newDepartureTime)){
+            if (!oldDepartureTime.equals(newDepartureTime)) {
                 updatedLegs = 1;
             }
         }
-        if (leg.arrivalDelay != arrivalTripTimesUpdate.arrivalDelay){
+        if (leg.arrivalDelay != arrivalTripTimesUpdate.arrivalDelay) {
             CharSequence oldArrivalTime = ConversionUtils
                     .getTimeWithContext(mApplicationContext, leg.agencyTimeZoneOffset,
                             Long.parseLong(leg.endTime), false);
             Long scheduledEndTime = Long.parseLong(leg.endTime) - leg.arrivalDelay * 1000;
             leg.arrivalDelay = arrivalTripTimesUpdate.arrivalDelay;
-            leg.endTime = ((Long)(scheduledEndTime + leg.arrivalDelay * 1000)).toString();
+            leg.endTime = ((Long) (scheduledEndTime + leg.arrivalDelay * 1000)).toString();
             CharSequence newArrivalTime = ConversionUtils
                     .getTimeWithContext(mApplicationContext, leg.agencyTimeZoneOffset,
                             Long.parseLong(leg.endTime), false);
-            if (!oldArrivalTime.equals(newArrivalTime)){
-                if (updatedLegs == 1){
+            if (!oldArrivalTime.equals(newArrivalTime)) {
+                if (updatedLegs == 1) {
                     updatedLegs = 3;
-                }
-                else{
+                } else {
                     updatedLegs = 2;
                 }
             }
@@ -4110,19 +4097,17 @@ public class MainFragment extends Fragment implements
         return updatedLegs;
     }
 
-    private String generateDelayText(int delay, boolean longFormat){
+    private String generateDelayText(int delay, boolean longFormat) {
         String delayText = ConversionUtils.getFormattedDurationTextNoSeconds(delay, longFormat, mApplicationContext);
-        if (delay == 0){
+        if (delay == 0) {
             delayText = getResources()
                     .getString(R.string.map_markers_warning_live_upates_on_time);
-        }
-        else if (delay > 0) {
+        } else if (delay > 0) {
             delayText += " "
                     + getResources()
                     .getString(R.string.map_markers_warning_live_upates_late_arrival);
-        }
-        else {
-            delayText = delayText.replace("-","");
+        } else {
+            delayText = delayText.replace("-", "");
             delayText += " "
                     + getResources()
                     .getString(R.string.map_markers_warning_live_upates_early_arrival);
@@ -4130,15 +4115,15 @@ public class MainFragment extends Fragment implements
         return delayText;
     }
 
-    private void showNotification(Leg leg, int legsUpdated){
-        if (!getFragmentListener().getCurrentItinerary().contains(leg)){
+    private void showNotification(Leg leg, int legsUpdated) {
+        if (!getFragmentListener().getCurrentItinerary().contains(leg)) {
             return;
         }
         String delayText;
 
         NotificationCompat.InboxStyle inboxStyle =
                 new NotificationCompat.InboxStyle();
-        if (legsUpdated == 1){
+        if (legsUpdated == 1) {
             delayText = generateDelayText(leg.departureDelay, false) + " " +
                     getResources().getString(R.string.notification_stop_name_conector) + " "
                     + getResources().getString(R.string.notification_origin);
@@ -4146,21 +4131,19 @@ public class MainFragment extends Fragment implements
                     getResources().getString(R.string.notification_stop_name_conector) + " "
                     + getResources().getString(R.string.notification_origin) + ", "
                     + leg.from.name);
-        }
-        else if (legsUpdated == 2){
+        } else if (legsUpdated == 2) {
             delayText = generateDelayText(leg.arrivalDelay, false) + " " +
                     getResources().getString(R.string.notification_stop_name_conector) + " "
                     + getResources().getString(R.string.notification_destination);
             inboxStyle.addLine(generateDelayText(leg.arrivalDelay, false) + " " +
                     getResources().getString(R.string.notification_stop_name_conector) + " "
-                    + getResources().getString(R.string.notification_destination) +", "
+                    + getResources().getString(R.string.notification_destination) + ", "
                     + leg.to.name);
-        }
-        else if (legsUpdated == 3){
-            if (leg.departureDelay == leg.arrivalDelay){
+        } else if (legsUpdated == 3) {
+            if (leg.departureDelay == leg.arrivalDelay) {
                 delayText = generateDelayText(leg.departureDelay, false) + " " +
                         getResources().getString(R.string.notification_stop_name_conector) + " "
-                        + getResources().getString(R.string.notification_origin)  + " " +
+                        + getResources().getString(R.string.notification_origin) + " " +
                         getResources().getString(R.string.notification_two_delays_connector) + " "
                         +
                         getResources().getString(R.string.notification_destination);
@@ -4171,11 +4154,10 @@ public class MainFragment extends Fragment implements
                 inboxStyle.addLine(getResources().getString(R.string.notification_stop_name_conector) + " "
                         + getResources().getString(R.string.notification_destination) + ","
                         + " " + leg.to.name);
-            }
-            else{
-                delayText =  generateDelayText(leg.departureDelay, false) + " " +
+            } else {
+                delayText = generateDelayText(leg.departureDelay, false) + " " +
                         getResources().getString(R.string.notification_stop_name_conector) + " "
-                        + getResources().getString(R.string.notification_origin)  + " " +
+                        + getResources().getString(R.string.notification_origin) + " " +
                         getResources().getString(R.string.notification_two_delays_connector) + " "
                         +
                         generateDelayText(leg.arrivalDelay, false) + " " +
@@ -4184,12 +4166,11 @@ public class MainFragment extends Fragment implements
                 inboxStyle.addLine(generateDelayText(leg.departureDelay, false) + " " +
                         getResources().getString(R.string.notification_stop_name_conector) + " "
                         + leg.from.name);
-                inboxStyle.addLine( generateDelayText(leg.arrivalDelay, false) + " " +
+                inboxStyle.addLine(generateDelayText(leg.arrivalDelay, false) + " " +
                         getResources().getString(R.string.notification_stop_name_conector) + " "
                         + leg.to.name);
             }
-        }
-        else{
+        } else {
             return;
         }
 
@@ -4272,10 +4253,10 @@ public class MainFragment extends Fragment implements
         }
     }
 
-    public void openModeMarker(String tripId){
-        if (mModeMarkers != null && tripId != null){
+    public void openModeMarker(String tripId) {
+        if (mModeMarkers != null && tripId != null) {
             for (Map.Entry<Marker, TripInfo> entry : mModeMarkers.entrySet()) {
-                if (tripId.equals(entry.getValue().getTripId())){
+                if (tripId.equals(entry.getValue().getTripId())) {
                     entry.getKey().showInfoWindow();
                     break;
                 }
@@ -4289,22 +4270,21 @@ public class MainFragment extends Fragment implements
         listenForTripTimeUpdates(false, 0);
     }
 
-    public class AlarmReceiver extends BroadcastReceiver{
+    public class AlarmReceiver extends BroadcastReceiver {
 
         @Override
         public void onReceive(Context context, Intent intent) {
             NotificationManager notificationManager;
-            if (intent.getAction().equals(OTPApp.INTENT_UPDATE_BIKE_RENTAL_ACTION)){
+            if (intent.getAction().equals(OTPApp.INTENT_UPDATE_BIKE_RENTAL_ACTION)) {
                 BikeRentalLoad bikeRentalLoad = new BikeRentalLoad(mApplicationContext, false, MainFragment.this);
                 bikeRentalLoad.execute(mOTPApp.getSelectedServer().getBaseURL());
-            }
-            else if (intent.getAction().equals(OTPApp.INTENT_UPDATE_TRIP_TIME_ACTION)){
+            } else if (intent.getAction().equals(OTPApp.INTENT_UPDATE_TRIP_TIME_ACTION)) {
                 RequestTimesForTrips requestTimesForTrips =
                         new RequestTimesForTrips(mApplicationContext, MainFragment.this);
                 List<String> legsToUpdate = new ArrayList<String>();
-                for (Itinerary itinerary : getFragmentListener().getCurrentItineraryList()){
-                    for (Leg leg : itinerary.legs){
-                        if (leg.realTime && (TraverseMode.valueOf(leg.mode)).isTransit()){
+                for (Itinerary itinerary : getFragmentListener().getCurrentItineraryList()) {
+                    for (Leg leg : itinerary.legs) {
+                        if (leg.realTime && (TraverseMode.valueOf(leg.mode)).isTransit()) {
                             legsToUpdate.add(leg.agencyId + ":" + leg.tripId);
                         }
                     }
@@ -4312,21 +4292,18 @@ public class MainFragment extends Fragment implements
                 legsToUpdate.add(0, mOTPApp.getSelectedServer().getBaseURL());
                 String[] legsToUpdateArray = legsToUpdate.toArray(new String[legsToUpdate.size()]);
                 requestTimesForTrips.execute(legsToUpdateArray);
-            }
-            else if (intent.getAction().equals(OTPApp.INTENT_NOTIFICATION_ACTION_OPEN_APP)){
+            } else if (intent.getAction().equals(OTPApp.INTENT_NOTIFICATION_ACTION_OPEN_APP)) {
                 Intent activityIntent = new Intent(mApplicationContext, MyActivity.class);
                 activityIntent.setAction(OTPApp.INTENT_NOTIFICATION_RESUME_APP_WITH_TRIP_ID);
                 activityIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 activityIntent.putExtra(OTPApp.BUNDLE_KEY_INTENT_TRIP_ID, intent.getStringExtra(OTPApp.BUNDLE_KEY_INTENT_TRIP_ID));
                 mApplicationContext.startActivity(activityIntent);
-            }
-            else if (intent.getAction().equals(OTPApp.INTENT_NOTIFICATION_ACTION_DISMISS_UPDATES)){
+            } else if (intent.getAction().equals(OTPApp.INTENT_NOTIFICATION_ACTION_DISMISS_UPDATES)) {
                 notificationManager =
                         (NotificationManager) mApplicationContext.getSystemService(Context.NOTIFICATION_SERVICE);
-                if (intent.getStringExtra(OTPApp.BUNDLE_KEY_INTENT_TRIP_ID) != null){
+                if (intent.getStringExtra(OTPApp.BUNDLE_KEY_INTENT_TRIP_ID) != null) {
                     notificationManager.cancelAll();
-                }
-                else{
+                } else {
                     notificationManager.cancel(Integer
                             .parseInt(intent.getStringExtra(OTPApp.BUNDLE_KEY_INTENT_TRIP_ID)));
                 }

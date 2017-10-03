@@ -19,7 +19,8 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.2.0'
+        classpath 'com.android.tools.build:gradle:3.0.0-beta6'
+        classpath 'com.google.gms:google-services:3.0.0'
     }
 }
 apply plugin: 'com.android.application'
@@ -34,17 +35,18 @@ repositories {
         // CUTR Releases
         url "https://github.com/CUTR-at-USF/cutr-mvn-repo/raw/master/releases"
     }
+    google()
 }
 
 android {
-    compileSdkVersion 21
-    buildToolsVersion "21.1.2"
+    compileSdkVersion 26
+    buildToolsVersion '26.0.1'
 
     defaultConfig {
-        versionCode 18
-        versionName "2.1.5"
-        minSdkVersion 9
-        targetSdkVersion 13
+        versionCode 17
+        versionName "2.1.6"
+        minSdkVersion 17
+        targetSdkVersion 26
     }
 
     // http://stackoverflow.com/questions/20673625/gradle-0-7-0-duplicate-files-during-packaging-of-apk
@@ -67,7 +69,6 @@ android {
             debug {
                 storeFile file("otp-android.debug.keystore")
             }
-
             release {
                 storeFile file(props['key.store'])
                 keyAlias props['key.alias']
@@ -111,10 +112,10 @@ tasks.whenTaskAdded { theTask ->
 }
 
 dependencies {
-    compile 'com.android.support:support-v4:21.0.0'
+    compile 'com.android.support:support-v4:26.1.0'
     // Only include Google Play Services maps and location libraries
-    compile 'com.google.android.gms:play-services-maps:7.8.0'
-    compile 'com.google.android.gms:play-services-location:7.8.0'
+    compile 'com.google.android.gms:play-services-maps:9.0.0'
+    compile 'com.google.android.gms:play-services-location:9.0.0'
     // Jackson is used for parsing JSON REST API responses
     compile 'com.fasterxml.jackson.core:jackson-core:2.4.1'
     compile 'com.fasterxml.jackson.core:jackson-annotations:2.4.1'
@@ -126,3 +127,4 @@ dependencies {
     // Map util (point in bounding box)
     compile 'com.google.maps.android:android-maps-utils:0.4'
 }
+apply plugin: 'com.google.gms.google-services'

@@ -16,18 +16,22 @@
 
 package edu.usf.cutr.opentripplanner.android;
 
+import android.*;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.provider.ContactsContract;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
 import com.google.android.gms.maps.model.LatLng;
@@ -76,6 +80,16 @@ public class MyActivity extends FragmentActivity implements OtpFragment {
     private boolean isButtonStartLocation = false;
 
     DateCompleteListener dateCompleteCallback;
+
+    public static final int MULTIPLE_PERMISSIONS = 10; // code you want.
+
+    String[] permissions = new String[]{
+            android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            android.Manifest.permission.ACCESS_COARSE_LOCATION,
+            android.Manifest.permission.READ_CONTACTS,
+            android.Manifest.permission.ACCESS_NETWORK_STATE,
+            android.Manifest.permission.ACCESS_FINE_LOCATION
+    };
 
     /** Called when the activity is first created. */
     @Override
@@ -246,6 +260,50 @@ public class MyActivity extends FragmentActivity implements OtpFragment {
 
         mainFragment.showRouteOnMap(currentItinerary, animateCamera);
     }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (checkPermissions()) {
+            // permissions granted.
+
+        } else {
+            // show dialog informing them that we lack certain permissions
+        }
+    }
+
+    private boolean checkPermissions() {
+        int result;
+        List<String> listPermissionsNeeded = new ArrayList<>();
+        for (String p : permissions) {
+            result = ContextCompat.checkSelfPermission(MyActivity.this, p);
+            if (result != PackageManager.PERMISSION_GRANTED) {
+                listPermissionsNeeded.add(p);
+            }
+        }
+        if (!listPermissionsNeeded.isEmpty()) {
+            ActivityCompat.requestPermissions(this, listPermissionsNeeded.toArray(new String[listPermissionsNeeded.size()]), MULTIPLE_PERMISSIONS);
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case MULTIPLE_PERMISSIONS: {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // permissions granted.
+                } else {
+                    // no permissions granted.
+                }
+                return;
+            }
+        }
+    }
+
+
+
 
     @Override
     public List<Leg> getCurrentItinerary() {
